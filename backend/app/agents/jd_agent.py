@@ -1,5 +1,5 @@
-from app.config import client
 from app.utils.formatter import extract_json
+from app.utils.llm import generate_text
 
 def analyze_jd(jd: str):
 
@@ -16,11 +16,22 @@ Job Description:
 {jd}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    try:
+        data = extract_json(generate_text(prompt))
+    except Exception:
+        return {"required_skills": []}
 
-    data = extract_json(response.text)
+    if not isinstance(data, dict):
+        return {"required_skills": []}
 
-    return data if data else {"required_skills": []}
+    raw_required = data.get("required_skills", [])
+    if not isinstance(raw_required, list):
+        return {"required_skills": []}
+
+    required_skills = [
+        str(skill).strip()
+        for skill in raw_required
+        if str(skill).strip()
+    ]
+
+    return {"required_skills": required_skills}

@@ -1,5 +1,5 @@
-from app.config import client
 from app.utils.formatter import extract_json
+from app.utils.llm import generate_text
 
 def analyze_resume(resume: str):
 
@@ -18,11 +18,26 @@ Resume:
 {resume}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    try:
+        data = extract_json(generate_text(prompt))
+    except Exception:
+        return {"skills": []}
 
-    data = extract_json(response.text)
+    if not isinstance(data, dict):
+        return {"skills": []}
 
-    return data if data else {"skills": []}
+    raw_skills = data.get("skills", [])
+    if not isinstance(raw_skills, list):
+        return {"skills": []}
+
+    skills = []
+    for item in raw_skills:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name", "")).strip()
+        level = str(item.get("level", "Beginner")).strip() or "Beginner"
+        if name:
+            skills.append({"name": name, "level": level})
+
+    return {"skills": skills}
+    

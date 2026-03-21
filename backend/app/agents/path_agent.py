@@ -1,5 +1,5 @@
-from app.config import client
 from app.utils.formatter import extract_json
+from app.utils.llm import generate_text
 
 def generate_learning_path(missing_skills):
 
@@ -18,14 +18,28 @@ Return ONLY JSON:
 }}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    try:
+        data = extract_json(generate_text(prompt))
+    except Exception:
+        return []
 
-    data = extract_json(response.text)
+    if not isinstance(data, dict):
+        return []
 
-    if data and "roadmap" in data:
-        return data["roadmap"]
+    roadmap = data.get("roadmap", [])
+    if not isinstance(roadmap, list):
+        return []
 
-    return []
+    cleaned = []
+    for item in roadmap:
+        if not isinstance(item, dict):
+            continue
+        skill = str(item.get("skill", "")).strip()
+        step = item.get("step")
+        if not skill:
+            continue
+        if not isinstance(step, int):
+            step = len(cleaned) + 1
+        cleaned.append({"skill": skill, "step": step})
+
+    return cleaned

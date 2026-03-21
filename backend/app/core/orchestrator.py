@@ -6,6 +6,7 @@ from app.agents.path_agent import generate_learning_path
 from app.core.graph_engine import apply_graph_dependencies
 from app.core.level_engine import apply_level_logic
 from app.core.trace_engine import generate_trace
+from app.db import save_analysis
 
 
 def run_pipeline(resume: str, job_description: str):
@@ -23,21 +24,28 @@ def run_pipeline(resume: str, job_description: str):
     graph_skills = apply_graph_dependencies(gap["missing"])
 
     # STEP 5
-    final_skills = apply_level_logic(
-        resume_data["skills"],
-        graph_skills
-    )
+    final_skills = apply_level_logic(resume_data.get("skills", []), graph_skills)
 
     # STEP 6
     path = generate_learning_path(final_skills)
 
     # STEP 7
     trace = generate_trace(resume_data, jd_data, gap, path)
+    db_status = save_analysis({
+        "resume": resume,
+        "job_description": job_description,
+        "skills": resume_data.get("skills", []),
+        "required_skills": jd_data.get("required_skills", []),
+        "gaps": final_skills,
+        "roadmap": path,
+        "decision_trace": trace,
+    })
 
     return {
         "skills": resume_data.get("skills", []),
         "required_skills": jd_data.get("required_skills", []),
         "gaps": final_skills,
         "roadmap": path,
-        "decision_trace": trace
+        "decision_trace": trace,
+        "database": db_status,
     }

@@ -1,8 +1,3 @@
-from app.config import client
+from app.utils.llm import generate_text
 
-response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents="Say hello"
-)
-
-print(response.text)
+print(generate_text("Say hello in one short sentence."))

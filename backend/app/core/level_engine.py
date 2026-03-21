@@ -1,15 +1,27 @@
 def apply_level_logic(resume_skills, required_skills):
-    levels = {s["name"]: s["level"] for s in resume_skills}
+    def normalize(skill: str) -> str:
+        return str(skill).strip().lower()
+
+    levels = {}
+    for skill in resume_skills:
+        if not isinstance(skill, dict):
+            continue
+        name = normalize(skill.get("name", ""))
+        level = str(skill.get("level", "")).strip().lower()
+        if name:
+            levels[name] = level
 
     final = []
 
     for skill in required_skills:
-        if skill in levels:
-            if levels[skill] == "Beginner":
-                final.append(skill)
-            elif levels[skill] in ["Intermediate", "Advanced"]:
-                continue
-        else:
+        normalized_skill = normalize(skill)
+        level = levels.get(normalized_skill)
+
+        if level is None:
+            final.append(skill)
+            continue
+
+        if level == "beginner":
             final.append(skill)
 
     return final
