@@ -1,77 +1,64 @@
-import { useState } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 
-function App() {
-  const [resume, setResume] = useState("");
-  const [jd, setJd] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+// Pages
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import Analyze from "./pages/Analyze";
+import Result from "./pages/Result";
+import History from "./pages/History";
+import Insights from "./pages/Insights";
+import Settings from "./pages/Settings";
 
-  const handleAnalyze = async () => {
-    setLoading(true);
-    setResult(null);
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          resume: resume,
-          job_description: jd,
-        }),
-      });
-
-      const data = await response.json();
-      setResult(data);
-    } catch (error) {
-      console.error(error);
-      alert("Error connecting to backend");
-    }
-
-    setLoading(false);
-  };
-
+// 🔥 Animation Wrapper
+function PageWrapper({ children }) {
   return (
-    <div style={{ padding: "30px", fontFamily: "Arial" }}>
-      <h1>🚀 OnboardAI Agent</h1>
-
-      <h3>Resume</h3>
-      <textarea
-        value={resume}
-        onChange={(e) => setResume(e.target.value)}
-        placeholder="Paste your resume..."
-        rows={6}
-        style={{ width: "100%" }}
-      />
-
-      <h3>Job Description</h3>
-      <textarea
-        value={jd}
-        onChange={(e) => setJd(e.target.value)}
-        placeholder="Paste job description..."
-        rows={6}
-        style={{ width: "100%" }}
-      />
-
-      <br /><br />
-
-      <button onClick={handleAnalyze}>
-        Analyze
-      </button>
-
-      <br /><br />
-
-      {loading && <p>🤖 AI Agents are thinking...</p>}
-
-      {result && (
-        <div>
-          <h3>Result</h3>
-          <pre>{JSON.stringify(result, null, 2)}</pre>
-        </div>
-      )}
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      style={{ height: "100%" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
-export default App;
+// 🔥 Routes with animation
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence>
+      <Routes location={location} key={location.pathname}>
+        {/* Public */}
+        <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
+        <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
+        <Route path="/signup" element={<PageWrapper><Signup /></PageWrapper>} />
+
+        {/* App */}
+        <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
+        <Route path="/analyze" element={<PageWrapper><Analyze /></PageWrapper>} />
+        <Route path="/result" element={<PageWrapper><Result /></PageWrapper>} />
+        <Route path="/history" element={<PageWrapper><History /></PageWrapper>} />
+        <Route path="/insights" element={<PageWrapper><Insights /></PageWrapper>} />
+        <Route path="/settings" element={<PageWrapper><Settings /></PageWrapper>} />
+
+        {/* Fallback */}
+        <Route path="*" element={<PageWrapper><Landing /></PageWrapper>} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
+// 🔥 Main App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AnimatedRoutes />
+    </BrowserRouter>
+  );
+}
