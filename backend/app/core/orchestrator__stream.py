@@ -11,6 +11,7 @@ from app.db import save_analysis
 
 
 async def run_pipeline_stream(resume: str, job_description: str):
+
     yield {"event": "step", "data": "Resume Agent -> Extracting skills..."}
     await asyncio.sleep(1)
     resume_data = analyze_resume(resume)
@@ -33,7 +34,7 @@ async def run_pipeline_stream(resume: str, job_description: str):
 
     yield {"event": "step", "data": "Path Agent -> Generating roadmap..."}
     await asyncio.sleep(1)
-    path = generate_learning_path(final_skills)
+    path = generate_learning_path(final_skills) if final_skills else []
 
     yield {"event": "step", "data": "Trace Engine -> Explaining decisions..."}
     await asyncio.sleep(1)

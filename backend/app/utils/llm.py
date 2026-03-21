@@ -65,6 +65,11 @@ def generate_text(prompt: str, max_tokens: int = 700) -> str:
 
             content = _get_message_content(choices[0])
             text = _stringify_content(content).strip()
+
+            # Defensive fallback for providers that still echo the prompt.
+            if text.startswith(prompt):
+                text = text[len(prompt):].strip()
+
             if text:
                 return text
         except Exception as exc:

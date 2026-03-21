@@ -27,7 +27,7 @@ def run_pipeline(resume: str, job_description: str):
     final_skills = apply_level_logic(resume_data.get("skills", []), graph_skills)
 
     # STEP 6
-    path = generate_learning_path(final_skills)
+    path = generate_learning_path(final_skills) if final_skills else []
 
     # STEP 7
     trace = generate_trace(resume_data, jd_data, gap, path)
