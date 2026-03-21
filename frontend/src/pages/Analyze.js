@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 
 import { analyzeCandidate, openAnalysisStream } from "../lib/api";
 import { getSkillName, normalizeGapItems } from "../lib/analysis";
+import { readResumeFile } from "../lib/resumeUpload";
 
 const initialStreamState = {
   steps: [],
@@ -20,6 +21,8 @@ export default function Analyze() {
   const [jd, setJd] = useState("");
   const [mode, setMode] = useState("stream");
   const [loading, setLoading] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState("");
   const [streamState, setStreamState] = useState(initialStreamState);
 
   useEffect(() => {
@@ -33,9 +36,35 @@ export default function Analyze() {
     setStreamState(initialStreamState);
   };
 
+  const handleResumeUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setUploadingResume(true);
+    setUploadedFileName(file.name);
+
+    try {
+      const extractedText = await readResumeFile(file);
+      if (!extractedText) {
+        throw new Error("The uploaded file did not contain readable text.");
+      }
+
+      setResume(extractedText);
+    } catch (error) {
+      console.error(error);
+      setUploadedFileName("");
+      alert(error.message || "Could not read the uploaded resume.");
+    } finally {
+      setUploadingResume(false);
+      event.target.value = "";
+    }
+  };
+
   const handleAnalyze = async () => {
-    if (!resume.trim() || !jd.trim()) {
-      alert("Please fill both fields");
+    if (!resume.trim() && !jd.trim()) {
+      alert("Please add a resume or a job description.");
       return;
     }
 
@@ -178,15 +207,39 @@ export default function Analyze() {
           </div>
 
           <div style={styles.inputGroup}>
+            <div style={styles.uploadCard}>
+              <div>
+                <h4 style={styles.uploadTitle}>Upload Resume</h4>
+                <p style={styles.uploadSubtitle}>
+                  Supports PDF, DOCX, and TXT files. Resume text is optional if you upload it here.
+                </p>
+              </div>
+
+              <label style={styles.uploadButton}>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt,.md,.rtf,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  style={styles.hiddenInput}
+                  onChange={handleResumeUpload}
+                  disabled={uploadingResume || loading}
+                />
+                {uploadingResume ? "Reading file..." : "Choose File"}
+              </label>
+            </div>
+
+            {uploadedFileName ? (
+              <p style={styles.uploadedFile}>Loaded: {uploadedFileName}</p>
+            ) : null}
+
             <textarea
-              placeholder="Paste resume..."
+              placeholder="Paste resume or upload a file..."
               value={resume}
               onChange={(event) => setResume(event.target.value)}
               style={styles.textarea}
             />
 
             <textarea
-              placeholder="Paste job description..."
+              placeholder="Paste job description... optional"
               value={jd}
               onChange={(event) => setJd(event.target.value)}
               style={styles.textarea}
@@ -418,6 +471,46 @@ const styles = {
     color: "#6b7280",
     marginBottom: "20px",
     lineHeight: "1.6",
+  },
+  uploadCard: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    padding: "14px 16px",
+    borderRadius: "18px",
+    border: "1px solid #dde5ef",
+    background: "#f8fafc",
+  },
+  uploadTitle: {
+    margin: 0,
+    fontSize: "15px",
+  },
+  uploadSubtitle: {
+    margin: "4px 0 0",
+    fontSize: "13px",
+    color: "#64748b",
+  },
+  uploadButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 14px",
+    borderRadius: "12px",
+    background: "#111827",
+    color: "#ffffff",
+    fontWeight: "600",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
+  hiddenInput: {
+    display: "none",
+  },
+  uploadedFile: {
+    margin: "-4px 0 4px",
+    color: "#047857",
+    fontSize: "13px",
+    fontWeight: "600",
   },
   modeRow: {
     display: "flex",

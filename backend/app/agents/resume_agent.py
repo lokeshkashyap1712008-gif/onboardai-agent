@@ -2,6 +2,9 @@ from app.utils.formatter import extract_json
 from app.utils.llm import generate_text
 
 def analyze_resume(resume: str):
+    if not str(resume).strip():
+        return {"skills": []}
+
     prompt = f"""
 Extract skills and their level from the resume.
 

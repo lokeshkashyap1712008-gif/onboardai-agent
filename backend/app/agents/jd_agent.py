@@ -2,6 +2,9 @@ from app.utils.formatter import extract_json
 from app.utils.llm import generate_text
 
 def analyze_jd(jd: str):
+    if not str(jd).strip():
+        return {"required_skills": []}
+
     prompt = f"""
 Extract required skills from this job description.
 
