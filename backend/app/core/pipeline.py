@@ -6,7 +6,7 @@ from app.agents.gap_agent import find_skill_gap
 from app.agents.jd_agent import analyze_jd
 from app.agents.path_agent import generate_learning_path
 from app.agents.resume_agent import analyze_resume
-from app.core.graph_engine import SKILL_GRAPH, apply_graph_dependencies
+from app.core.graph_engine import apply_graph_dependencies, get_skill_dependencies
 from app.core.level_engine import apply_level_logic
 from app.core.trace_engine import generate_trace
 from app.db import save_analysis
@@ -22,9 +22,9 @@ def build_analysis_result(resume: str, job_description: str) -> dict[str, Any]:
     trace = generate_trace(resume_data, jd_data, gap, path)
 
     graph_dependencies = {
-        skill: SKILL_GRAPH.get(skill, [])
+        skill: get_skill_dependencies(skill)
         for skill in gap["missing"]
-        if SKILL_GRAPH.get(skill)
+        if get_skill_dependencies(skill)
     }
 
     analysis = {

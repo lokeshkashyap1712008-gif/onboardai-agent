@@ -1,10 +1,31 @@
-SKILL_GRAPH: dict[str, list[str]] = {}
+def _normalize(skill: str) -> str:
+    return str(skill).strip().lower()
+
+
+SKILL_GRAPH: dict[str, list[str]] = {
+    "Machine Learning": ["Python", "Statistics"],
+    "Deep Learning": ["Machine Learning"],
+    "Artificial Intelligence": ["Machine Learning"],
+    "Figma": ["Design Principles", "Prototyping"],
+    "UI/UX": ["User Research", "Wireframing"],
+    "Marketing": ["Market Research", "Content Strategy"],
+    "Campaign Strategy": ["Marketing", "Analytics"],
+    "Sales": ["Communication", "Negotiation"],
+    "Data Analysis": ["Statistics", "Excel"],
+    "Project Management": ["Planning", "Communication"],
+}
+
+_SKILL_GRAPH_LOOKUP: dict[str, list[str]] = {
+    _normalize(skill): dependencies
+    for skill, dependencies in SKILL_GRAPH.items()
+}
+
+
+def get_skill_dependencies(skill: str) -> list[str]:
+    return _SKILL_GRAPH_LOOKUP.get(_normalize(skill), [])
 
 
 def apply_graph_dependencies(missing_skills):
-    def normalize(skill: str) -> str:
-        return str(skill).strip().lower()
-
     if not isinstance(missing_skills, list):
         return []
 
@@ -16,7 +37,7 @@ def apply_graph_dependencies(missing_skills):
         if not cleaned:
             return
 
-        normalized = normalize(cleaned)
+        normalized = _normalize(cleaned)
         if normalized in seen:
             return
 
@@ -29,7 +50,7 @@ def apply_graph_dependencies(missing_skills):
             continue
 
         add_skill(cleaned_skill)
-        for dependency in SKILL_GRAPH.get(cleaned_skill, []):
+        for dependency in get_skill_dependencies(cleaned_skill):
             add_skill(dependency)
 
     return result
