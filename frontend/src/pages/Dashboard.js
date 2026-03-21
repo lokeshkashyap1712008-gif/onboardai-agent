@@ -1,19 +1,50 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+
+import { fetchHistory } from "../lib/api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    total: 0,
+    gaps: 0,
+    skills: 0,
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadDashboard() {
+      try {
+        const history = await fetchHistory();
+        if (!active) {
+          return;
+        }
+
+        setStats({
+          total: history.length,
+          gaps: history.reduce((acc, item) => acc + (item.gaps?.length || 0), 0),
+          skills: history.reduce((acc, item) => acc + (item.skills?.length || 0), 0),
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div style={styles.page}>
-      {/* NAVBAR */}
       <div style={styles.nav}>
         <h3 style={styles.logo}>Onboard</h3>
 
         <div style={styles.navRight}>
-        <span style={{ ...styles.navItem, fontWeight: "600" }}>
-            Dashboard
-          </span>
+          <span style={{ ...styles.navItem, fontWeight: "600" }}>Dashboard</span>
           <span style={styles.navItem} onClick={() => navigate("/analyze")}>
             Analyze
           </span>
@@ -23,66 +54,32 @@ export default function Dashboard() {
           <span style={styles.navItem} onClick={() => navigate("/insights")}>
             Insights
           </span>
-          <span style={styles.navItem} onClick={() => navigate("/settings")}>
-            Settings
-          </span>
         </div>
       </div>
 
-      {/* MAIN */}
       <div style={styles.container}>
-        {/* HEADER */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 120 }}
-        >
-          <h1 style={styles.title}>Dashboard</h1>
-          <p style={styles.subtitle}>
-            Track onboarding insights and skill analysis
-          </p>
-        </motion.div>
+        <h1 style={styles.heading}>Dashboard</h1>
+        <p style={styles.subheading}>Live Supabase-backed analysis metrics.</p>
 
-        {/* STATS */}
         <div style={styles.grid}>
-          {["Skills Analyzed", "Gaps Found", "Reports Generated"].map((item, i) => (
-            <motion.div
-              key={i}
-              whileHover={{ y: -3 }}
-              style={styles.card}
-            >
-              <p style={styles.cardTitle}>{item}</p>
-              <h2 style={styles.cardValue}>{Math.floor(Math.random() * 50) + 5}</h2>
-            </motion.div>
-          ))}
+          <Card title="Analyses" value={stats.total} />
+          <Card title="Total Gaps" value={stats.gaps} />
+          <Card title="Skills Detected" value={stats.skills} />
         </div>
 
-        {/* ACTION */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          style={styles.actionCard}
-          onClick={() => navigate("/analyze")}
-        >
-          <h3>Start New Analysis →</h3>
-        </motion.div>
-
-        {/* RECENT */}
-        <div style={styles.section}>
-          <h3>Recent Analyses</h3>
-
-          <div style={styles.list}>
-            {["Frontend Developer", "Data Analyst", "Backend Engineer"].map((item, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ x: 4 }}
-                style={styles.listItem}
-              >
-                {item}
-              </motion.div>
-            ))}
-          </div>
+        <div style={styles.action} onClick={() => navigate("/analyze")}>
+          Start New Analysis
         </div>
       </div>
+    </div>
+  );
+}
+
+function Card({ title, value }) {
+  return (
+    <div style={styles.card}>
+      <p style={styles.cardTitle}>{title}</p>
+      <h2 style={styles.cardValue}>{value}</h2>
     </div>
   );
 }
@@ -91,102 +88,62 @@ const styles = {
   page: {
     minHeight: "100vh",
     fontFamily: "Inter, sans-serif",
-    background: "linear-gradient(180deg, #FFF7E6 0%, #EAF3FF 100%)",
-    color: "#1a1a1a",
+    background: "linear-gradient(180deg, #fff7e6 0%, #eaf3ff 100%)",
   },
-
   nav: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
     padding: "20px 40px",
   },
-
   logo: {
-    fontWeight: "600",
-    fontSize: "18px",
+    fontWeight: "700",
   },
-
   navRight: {
     display: "flex",
     gap: "20px",
   },
-
   navItem: {
     cursor: "pointer",
-    fontSize: "14px",
-    color: "#444",
   },
-
   container: {
-    maxWidth: "900px",
+    maxWidth: "860px",
     margin: "40px auto",
     padding: "0 20px",
   },
-
-  title: {
-    fontSize: "32px",
-    fontWeight: "600",
+  heading: {
+    fontSize: "34px",
+    marginBottom: "8px",
   },
-
-  subtitle: {
-    color: "#666",
-    marginBottom: "30px",
+  subheading: {
+    color: "#64748b",
+    marginBottom: "24px",
   },
-
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "16px",
-    marginBottom: "30px",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: "12px",
   },
-
   card: {
-    padding: "20px",
-    borderRadius: "16px",
-    background: "rgba(255,255,255,0.6)",
-    backdropFilter: "blur(18px)",
-    border: "1px solid rgba(255,255,255,0.6)",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+    padding: "22px",
+    background: "rgba(255,255,255,0.68)",
+    borderRadius: "18px",
+    border: "1px solid rgba(255,255,255,0.75)",
   },
-
   cardTitle: {
-    fontSize: "13px",
-    color: "#666",
+    margin: 0,
+    color: "#64748b",
   },
-
   cardValue: {
-    marginTop: "6px",
-    fontSize: "24px",
+    marginBottom: 0,
   },
-
-  actionCard: {
+  action: {
+    marginTop: "24px",
     padding: "20px",
-    borderRadius: "16px",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))",
-    backdropFilter: "blur(18px)",
-    border: "1px solid rgba(255,255,255,0.6)",
     cursor: "pointer",
-    marginBottom: "30px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-  },
-
-  section: {
-    marginTop: "20px",
-  },
-
-  list: {
-    marginTop: "10px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-
-  listItem: {
-    padding: "12px",
-    borderRadius: "10px",
-    background: "rgba(255,255,255,0.5)",
-    border: "1px solid rgba(255,255,255,0.6)",
-    cursor: "pointer",
+    borderRadius: "18px",
+    background: "#111827",
+    color: "#ffffff",
+    fontWeight: "700",
+    textAlign: "center",
   },
 };

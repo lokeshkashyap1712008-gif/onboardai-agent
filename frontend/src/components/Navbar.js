@@ -9,7 +9,6 @@ export default function Navbar() {
     { name: "Analyze", path: "/analyze" },
     { name: "History", path: "/history" },
     { name: "Insights", path: "/insights" },
-    { name: "Settings", path: "/settings" },
   ];
 
   return (

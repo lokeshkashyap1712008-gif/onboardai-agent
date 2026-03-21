@@ -20,19 +20,9 @@ export default function Landing() {
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             style={styles.liquidBtnSmall}
-            onClick={() => handleNavigate("/login")}
+            onClick={() => handleNavigate("/dashboard")}
           >
-            Login
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            style={styles.liquidBtnSmall}
-            onClick={() => handleNavigate("/signup")}
-          >
-            Sign Up
+            Open Dashboard
           </motion.button>
         </div>
       </div>
