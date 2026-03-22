@@ -1,14 +1,19 @@
-FROM node:20-alpine
+FROM node:20
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY package*.json ./
 RUN npm install
 
 COPY . .
 
-ENV HOST=0.0.0.0
+ARG REACT_APP_API_BASE_URL=
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
+
+RUN npm run build
+
+RUN npm install -g serve
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["serve", "-s", "build", "-l", "3000"]

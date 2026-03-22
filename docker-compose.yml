@@ -1,0 +1,20 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: onboardai-backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: onboardai-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

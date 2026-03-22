@@ -8,7 +8,20 @@ from app.config import SUPABASE_KEY, SUPABASE_URL
 logger = logging.getLogger(__name__)
 
 supabase: Client | None = None
-ANALYSIS_COLUMNS = {
+
+PREFERRED_ANALYSIS_COLUMNS = {
+    "resume",
+    "job_description",
+    "skills",
+    "required_skills",
+    "missing_skills",
+    "graph_skills",
+    "graph_dependencies",
+    "gaps",
+    "roadmap",
+    "decision_trace",
+}
+LEGACY_ANALYSIS_COLUMNS = {
     "resume",
     "job_description",
     "skills",
@@ -27,23 +40,49 @@ else:
     logger.warning("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
 
 
+def _filter_payload(payload: dict[str, Any], allowed_columns: set[str]) -> dict[str, Any]:
+    return {
+        key: value
+        for key, value in payload.items()
+        if key in allowed_columns
+    }
+
+
+def _insert_analysis_row(db_payload: dict[str, Any]) -> dict[str, Any] | None:
+    response = supabase.table("analyses").insert(db_payload).execute()
+    rows = response.data or []
+    return rows[0] if rows else None
+
+
 def save_analysis(payload: dict[str, Any]) -> dict[str, Any]:
+    preferred_payload = _filter_payload(payload, PREFERRED_ANALYSIS_COLUMNS)
+    if not preferred_payload:
+        return {"saved": False, "reason": "No insertable fields were provided."}
+
     if supabase is None:
         return {"saved": False, "reason": "Supabase is not configured."}
 
     try:
-        db_payload = {
-            key: value
-            for key, value in payload.items()
-            if key in ANALYSIS_COLUMNS
-        }
-        response = supabase.table("analyses").insert(db_payload).execute()
-        rows = response.data or []
-        record = rows[0] if rows else None
-        return {"saved": True, "record": record}
+        record = _insert_analysis_row(preferred_payload)
+        return {"saved": True, "record": record, "storage": "supabase"}
     except Exception as exc:
-        logger.warning("Supabase insert failed: %s", exc)
-        return {"saved": False, "reason": str(exc)}
+        logger.warning("Supabase insert with extended fields failed: %s", exc)
+
+    try:
+        legacy_payload = _filter_payload(payload, LEGACY_ANALYSIS_COLUMNS)
+        if legacy_payload:
+            record = _insert_analysis_row(legacy_payload)
+            return {
+                "saved": True,
+                "record": record,
+                "fallback": "legacy-columns",
+                "storage": "supabase",
+            }
+    except Exception as fallback_exc:
+        logger.warning("Supabase insert fallback failed: %s", fallback_exc)
+        return {"saved": False, "reason": str(fallback_exc)}
+
+    return {"saved": False, "reason": "Supabase schema fallback could not be applied."}
 
 
 def list_analyses(limit: int = 50) -> list[dict[str, Any]]:
@@ -58,16 +97,20 @@ def list_analyses(limit: int = 50) -> list[dict[str, Any]]:
             .limit(limit)
             .execute()
         )
-        return response.data or []
+        rows = response.data or []
+        return rows
     except Exception as exc:
         logger.warning("Supabase history query failed: %s", exc)
-        try:
-            response = supabase.table("analyses").select("*").limit(limit).execute()
-            rows = response.data or []
+
+    try:
+        response = supabase.table("analyses").select("*").limit(limit).execute()
+        rows = response.data or []
+        if rows:
             return list(reversed(rows))
-        except Exception as fallback_exc:
-            logger.warning("Supabase fallback history query failed: %s", fallback_exc)
-            return []
+    except Exception as fallback_exc:
+        logger.warning("Supabase fallback history query failed: %s", fallback_exc)
+
+    return []
 
 
 def get_analysis(record_id: str) -> dict[str, Any] | None:

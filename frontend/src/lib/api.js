@@ -1,6 +1,11 @@
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL?.replace(/\/$/, "") ||
-  "http://127.0.0.1:8010";
+const explicitBaseUrl = (process.env.REACT_APP_API_BASE_URL || "").trim();
+
+function getDefaultApiBaseUrl() {
+  const { protocol, hostname } = window.location;
+  return `${protocol}//${hostname}:8000`;
+}
+
+const API_BASE_URL = explicitBaseUrl || getDefaultApiBaseUrl();
 
 async function parseJsonResponse(response) {
   const text = await response.text();
